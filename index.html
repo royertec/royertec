@@ -2,66 +2,70 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>REPRODUCTOR PREMIUM - ROYER PRODUCCIONES</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REPRODUCTOR PREMIUM</title>
     <style>
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background-color: #050505;
-            display: flex; justify-content: center; align-items: center;
-            overflow: hidden; font-family: Arial, sans-serif;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 90%; max-width: 700px; text-align: center;
         }
         .player-card {
-            width: 95%; max-width: 780px; aspect-ratio: 16/9;
-            border: 2px solid #1db954;
-            border-radius: 14px;
-            box-shadow: 0 0 30px rgba(29, 185, 84, 0.35);
-            overflow: hidden; background: #000;
+            width: 100%; aspect-ratio: 16/9;
+            border: 2px solid #1db954; border-radius: 14px;
+            box-shadow: 0 0 25px rgba(29, 185, 84, 0.4);
+            background: #000; overflow: hidden;
         }
-        video {
-            width: 100%; height: 100%; object-fit: contain;
+        iframe {
+            width: 100%; height: 100%; border: none;
+        }
+        .btn-fallback {
+            display: inline-block; margin-top: 20px;
+            background: #1db954; color: #fff; font-weight: bold;
+            text-decoration: none; padding: 12px 25px; border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(29, 185, 84, 0.4);
         }
     </style>
 </head>
 <body>
 
+<div class="container">
     <div class="player-card">
-        <video id="video" controls autoplay playsinline></video>
+        <iframe id="reproductor" allowfullscreen playsinline></iframe>
     </div>
+    
+    <a id="boton_emergencia" href="#" target="_blank" class="btn-fallback" style="display:none;">
+        🚀 ABRIR EN SEGUNDO PLANO (SI SE QUEDA EN NEGRO)
+    </a>
+</div>
 
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        let streamUrl = urlParams.get('stream');
-        
-        // Si no se le pasa variable, carga ESPN 7 por defecto
-        if (!streamUrl) {
-            streamUrl = "http://tvdirect.pro:8080/live/Luis/Luis2025/3461.m3u8";
-        }
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    let streamUrl = urlParams.get('stream');
 
-        const video = document.getElementById('video');
+    // Canal por defecto si no mandas variable (ESPN 7)
+    if (!streamUrl) {
+        streamUrl = "http://tvdirect.pro:8080/live/Luis/Luis2025/3461.m3u8";
+    }
 
-        if (Hls.isSupported()) {
-            const hls = new Hls({
-                maxBufferLength: 30,
-                lazyLoadMaxDuration: 30
-            });
-            hls.loadSource(streamUrl);
-            hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                video.play().catch(function(e) {
-                    console.log("Auto-play bloqueado por el navegador");
-                });
-            });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            // Soporte directo para iPhones
-            video.src = streamUrl;
-            video.addEventListener('loadedmetadata', function() {
-                video.play();
-            });
-        }
-    </script>
+    // Usamos el servidor reproductor universal de IPTV
+    const iframeUrl = "https://player.livepush.io/?url=" + encodeURIComponent(streamUrl);
+    
+    // Asignamos las rutas
+    document.getElementById('reproductor').src = iframeUrl;
+    
+    const boton = document.getElementById('boton_emergencia');
+    boton.href = iframeUrl;
+    
+    // Mostramos el botón después de 3 segundos por si la señal tarda en conectar
+    setTimeout(() => {
+        boton.style.display = "inline-block";
+    }, 2000);
+</script>
+
 </body>
 </html>
