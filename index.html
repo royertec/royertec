@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>REPRODUCTOR PREMIUM - ROYER PRODUCCIONES</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/@clappr/core@latest/dist/clappr-core.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/clappr-hlsjs-playback@latest/dist/clappr-hlsjs-playback.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
         html, body {
@@ -17,50 +16,52 @@
         }
         .player-card {
             width: 95%; max-width: 780px; aspect-ratio: 16/9;
-            border: 2px solid #1db954; /* El borde verde de tu marca */
+            border: 2px solid #1db954;
             border-radius: 14px;
             box-shadow: 0 0 30px rgba(29, 185, 84, 0.35);
             overflow: hidden; background: #000;
         }
-        #video-player { width: 100%; height: 100%; }
-        .clappr-spinner[data-spinner] .path { stroke: #1db954 !important; }
+        video {
+            width: 100%; height: 100%; object-fit: contain;
+        }
     </style>
 </head>
 <body>
 
     <div class="player-card">
-        <div id="video-player"></div>
+        <video id="video" controls autoplay playsinline></video>
     </div>
 
     <script>
-        // Captura el canal enviado dinámicamente desde Blogger
         const urlParams = new URLSearchParams(window.location.search);
-        const encodedStream = urlParams.get('stream');
+        let streamUrl = urlParams.get('stream');
         
-        // Señal de ESPN 7 por defecto si entran directo sin parámetros
-        let finalUrl = "http://tvdirect.pro:8080/live/Luis/Luis2025/3461.m3u8";
-
-        if (encodedStream) {
-            try {
-                // Intenta decodificar si viene encriptado en Base64 seguro
-                finalUrl = atob(encodedStream);
-            } catch(e) {
-                // Si no es base64 válido, toma el texto directo de la URL
-                finalUrl = encodedStream;
-            }
+        // Si no se le pasa variable, carga ESPN 7 por defecto
+        if (!streamUrl) {
+            streamUrl = "http://tvdirect.pro:8080/live/Luis/Luis2025/3461.m3u8";
         }
 
-        var player = new Clappr.Player({
-            source: finalUrl,
-            parentId: "#video-player",
-            plugins: [HlsjsPlayback],
-            preload: 'auto',
-            autoPlay: true,
-            width: '100%',
-            height: '100%',
-            mediabuttonsColor: "#1db954",
-            seekBarColor: "#1db954"
-        });
+        const video = document.getElementById('video');
+
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                maxBufferLength: 30,
+                lazyLoadMaxDuration: 30
+            });
+            hls.loadSource(streamUrl);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                video.play().catch(function(e) {
+                    console.log("Auto-play bloqueado por el navegador");
+                });
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Soporte directo para iPhones
+            video.src = streamUrl;
+            video.addEventListener('loadedmetadata', function() {
+                video.play();
+            });
+        }
     </script>
 </body>
 </html>
